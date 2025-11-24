@@ -18,7 +18,7 @@ def read_wells_spreadsheet():
         gc = gspread.service_account(filename='whatsap-automation-service-60ba0a9906a4.json')
         
         # Open the spreadsheet by name
-        spreadsheet = gc.open('wells spreadsheet')
+        spreadsheet = gc.open('products')
         
         # Get the first worksheet (you can specify a specific sheet name if needed)
         worksheet = spreadsheet.sheet1
