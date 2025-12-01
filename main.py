@@ -3,6 +3,18 @@ import time
 from datetime import datetime
 import gspread
 from google.oauth2.service_account import Credentials
+import requests
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+
+
+API_VERSION = os.getenv("API_VERSION")
+WHATSAPP_BUSINESS_PHONE_NUMBER_ID = os.getenv("WHATSAPP_BUSINESS_PHONE_NUMBER_ID")
+WHATSAPP_USER_PHONE_NUMBER = os.getenv("WHATSAPP_USER_PHONE_NUMBER")
+ACCESS_TOKEN = os.getenv("WHATSAPP_ACCESS_TOKEN")
 
 def check_expiring_products():
     print(f"[{datetime.now().strftime('%H:%M:%S')}] ✅ Checking expiring products...")
@@ -39,6 +51,42 @@ def read_wells_spreadsheet():
             # Print each row
             for i, row in enumerate(data, 1):
                 print(f"Row {i}: {row}")
+                try:
+                    print(f"startinggg sending message + {API_VERSION}, {WHATSAPP_BUSINESS_PHONE_NUMBER_ID}, {ACCESS_TOKEN}")
+
+                    url = f"https://graph.facebook.com/{API_VERSION}/{WHATSAPP_BUSINESS_PHONE_NUMBER_ID}/messages"
+                    headers = {
+                        "Authorization": f"Bearer {ACCESS_TOKEN}",
+                        "Content-Type": "application/json",
+                    }
+                    data = {
+                        "messaging_product": "whatsapp",
+                        "to": f"{WHATSAPP_USER_PHONE_NUMBER}",
+                        "type": "template",
+                        "template": {
+                            "name": "payment_template",
+                            "language": {"code": "en_US"},
+                        },
+                         "components": [
+                                         {
+                                            "type": "body",  # body parameters
+                                            "parameters": [
+                                                {"type": "text", "text": "Wells"},   # first parameter
+                                                {"type": "text", "text": "$50"},    # second parameter
+                                                # add more as needed
+                                                {"type": "text", "text": "invoice"},    # second parameter
+                                                # add more as needed
+                                            ]
+                                        }
+                                    ]
+                    }
+                    wRespone = requests.post(url, headers=headers, json=data)
+                    print("wRespone", wRespone.json())
+                    
+                except Exception as e:
+                    print(f"[{datetime.now().strftime('%H:%M:%S')}] ❌ Error processing row {i}: {str(e)}")
+                else:
+                    print("Yooooooooooooooo sent message",)
         else:
             print("No data found in the spreadsheet")
             
