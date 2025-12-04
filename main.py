@@ -43,9 +43,20 @@ def read_wells_spreadsheet():
         for client_index, client_row in enumerate(clients_data, 1):
             sheet_name = client_row.get("Sheet_Name")
             sheet_phoneNumber = client_row.get("Phone_Number")
+            name = client_row.get("Name")
             if not sheet_name:
                 print(
                     f"[{datetime.now().strftime('%H:%M:%S')}] ⚠️ Skipping client row {client_index}: missing 'Sheet_Name'"
+                )
+                continue
+            elif not sheet_phoneNumber:
+                print(
+                    f"[{datetime.now().strftime('%H:%M:%S')}] ⚠️ Skipping client row {client_index}: missing 'Phone_Number'"
+                )
+                continue
+            elif not name:
+                print(
+                    f"[{datetime.now().strftime('%H:%M:%S')}] ⚠️ Skipping client row {client_index}: missing 'Name'"
                 )
                 continue
 
@@ -122,7 +133,7 @@ def read_wells_spreadsheet():
                                     {
                                         "type": "body",
                                         "parameters": [
-                                            {"type": "text", "text": "Wells"},
+                                            {"type": "text", "text": f"{name}"},
                                             {"type": "text", "text": "11/12/2025"},
                                             {
                                                 "type": "text",
