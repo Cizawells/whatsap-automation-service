@@ -33,90 +33,133 @@ def read_wells_spreadsheet():
             filename="whatsap-automation-service-60ba0a9906a4.json"
         )
 
-        # Open the spreadsheet by name
-        spreadsheet = gc.open("wells spreadsheet")
+        # Open the clients spreadsheet and read its first sheet
+        clients_spreadsheet = gc.open("whatsap_automation_clients")
+        clients_worksheet = clients_spreadsheet.sheet1
+        clients_data = clients_worksheet.get_all_records()
 
-        # Get the first worksheet (you can specify a specific sheet name if needed)
-        worksheet = spreadsheet.sheet1
+        last_sheet_data = None
 
-        # Get all values from the worksheet
-        data = worksheet.get_all_records()
-        # print("DAataaaaaaaaaaaaaa", data)
-        urgentList = []
-        warningList = []
-        infoList = []
+        for client_index, client_row in enumerate(clients_data, 1):
+            sheet_name = client_row.get("Sheet_Name")
+            sheet_phoneNumber = client_row.get("Phone_Number")
+            if not sheet_name:
+                print(
+                    f"[{datetime.now().strftime('%H:%M:%S')}] ⚠️ Skipping client row {client_index}: missing 'Sheet_Name'"
+                )
+                continue
 
-        if data:
-            # Print headers
-            headers = list(data[0].keys())
-            print(f"Headers: {', '.join(headers)}")
-            print("-" * 50)
+            try:
+                # For each client, open the spreadsheet specified in Sheet_Name
+                spreadsheet = gc.open(sheet_name)
 
-            # Print each row
-            for i, row in enumerate(data, 1):
-                required_keys = ["Name", "Quantity", "Expiry_date", "Remaining_Days"]
-                if not all(
-                    k in row and row[k] not in (None, "", " ") for k in required_keys
-                ):
-                    continue
+                # Get the first worksheet (you can specify a specific sheet name if needed)
+                worksheet = spreadsheet.sheet1
 
-                remaining_days = row["Remaining_Days"]
-                # print(f"Row {i} remaining days: {row["Remaining_Days"]}")
-                if remaining_days < 10 and remaining_days > 7:
-                    infoList.append(row)
-                elif remaining_days <= 7 and remaining_days > 2:
-                    warningList.append(row)
-                elif remaining_days <= 2:
-                    urgentList.append(row)
+                # Get all values from the worksheet
+                data = worksheet.get_all_records()
+                last_sheet_data = data
 
-                # try:
-                #     print(
-                #         f"startinggg sending message + {API_VERSION}, {WHATSAPP_BUSINESS_PHONE_NUMBER_ID}, {ACCESS_TOKEN}"
-                #     )
+                urgentList = []
+                warningList = []
+                infoList = []
 
-                #     url = f"https://graph.facebook.com/{API_VERSION}/{WHATSAPP_BUSINESS_PHONE_NUMBER_ID}/messages"
-                #     headers = {
-                #         "Authorization": f"Bearer {ACCESS_TOKEN}",
-                #         "Content-Type": "application/json",
-                #     }
-                #     data = {
-                #         "messaging_product": "whatsapp",
-                #         "to": f"{WHATSAPP_USER_PHONE_NUMBER}",
-                #         "type": "template",
-                #         "template": {
-                #             "name": "payment_template",
-                #             "language": {"code": "en_US"},
-                #             "components": [  # ✅ Inside template
-                #                 {
-                #                     "type": "body",
-                #                     "parameters": [
-                #                         {"type": "text", "text": "Wells"},
-                #                         {"type": "text", "text": "$50"},
-                #                         {"type": "text", "text": "invoice"},
-                #                     ],
-                #                 }
-                #             ],
-                #         },
-                #     }
-                #     wRespone = requests.post(url, headers=headers, json=data)
-                #     print("wRespone", wRespone.json())
+                if data:
+                    # Print headers
+                    headers = list(data[0].keys())
+                    print(f"[{sheet_name}] Headers: {', '.join(headers)}")
+                    print("-" * 50)
 
-                # except Exception as e:
-                #     print(
-                #         f"[{datetime.now().strftime('%H:%M:%S')}] ❌ Error processing row {i}: {str(e)}"
-                #     )
-                # else:
-                #     print(
-                #         "Yooooooooooooooo sent message",
-                #     )
-            print("infoList", infoList)
-            print("warningList", warningList)
-            print("urgentList", urgentList)
-        else:
-            print("No data found in the spreadsheet")
+                    # Print each row
+                    for i, row in enumerate(data, 1):
+                        required_keys = [
+                            "Name",
+                            "Quantity",
+                            "Expiry_date",
+                            "Remaining_Days",
+                        ]
+                        if not all(
+                            k in row and row[k] not in (None, "", " ")
+                            for k in required_keys
+                        ):
+                            continue
 
-        print("=" * 50)
-        return data
+                        remaining_days = row["Remaining_Days"]
+                        if remaining_days < 10 and remaining_days > 7:
+                            infoList.append(row)
+                        elif remaining_days <= 7 and remaining_days > 2:
+                            warningList.append(row)
+                        elif remaining_days <= 2:
+                            urgentList.append(row)
+
+                    print(f"[{sheet_name}] infoList", infoList)
+                    print(f"[{sheet_name}] warningList", warningList)
+                    print(f"[{sheet_name}] urgentList", urgentList)
+
+                    urgentItemsText = "".join(
+                        f"{item['Name']} - {item['Quantity']}u (expire {item['Expiry_date']}) | "
+                        for item in urgentList
+                    )
+
+                    try:
+                        print(
+                            f"startinggg sending message + {API_VERSION}, {WHATSAPP_BUSINESS_PHONE_NUMBER_ID}, {ACCESS_TOKEN}"
+                        )
+
+                        url = f"https://graph.facebook.com/{API_VERSION}/{WHATSAPP_BUSINESS_PHONE_NUMBER_ID}/messages"
+                        headers = {
+                            "Authorization": f"Bearer {ACCESS_TOKEN}",
+                            "Content-Type": "application/json",
+                        }
+                        payload = {
+                            "messaging_product": "whatsapp",
+                            "to": f"{sheet_phoneNumber}",
+                            "type": "template",
+                            "template": {
+                                "name": "daily_inventory_alert",
+                                "language": {"code": "fr"},
+                                "components": [
+                                    {
+                                        "type": "body",
+                                        "parameters": [
+                                            {"type": "text", "text": "Wells"},
+                                            {"type": "text", "text": "11/12/2025"},
+                                            {
+                                                "type": "text",
+                                                # "text": f"🔴 URGENT (0-2 jours): {len(urgentList)} produit(s): {urgentItemsText}",
+                                                "text": f"🔴 URGENT (0-2 jours): {len(urgentList)} produit(s): {urgentItemsText}",
+                                            },
+                                            {"type": "text", "text": "5"},
+                                        ],
+                                    }
+                                ],
+                            },
+                        }
+                        wRespone = requests.post(url, headers=headers, json=payload)
+                        print("wRespone", wRespone.json())
+
+                    except Exception as e:
+                        print(
+                            f"[{datetime.now().strftime('%H:%M:%S')}] ❌ Error sending message for sheet '{sheet_name}': {str(e)}"
+                        )
+                    else:
+                        print(
+                            f"Yooooooooooooooo sent message for sheet '{sheet_name}'",
+                        )
+                else:
+                    print(f"No data found in spreadsheet '{sheet_name}'")
+
+                print("=" * 50)
+
+            except gspread.SpreadsheetNotFound:
+                print(
+                    f"[{datetime.now().strftime('%H:%M:%S')}] ❌ Error: spreadsheet '{sheet_name}' not found"
+                )
+                print(
+                    "Please check the spreadsheet name in 'whatsap_automation_clients' and ensure it's shared with your service account"
+                )
+
+        return last_sheet_data
 
     except FileNotFoundError:
         print(
@@ -127,7 +170,7 @@ def read_wells_spreadsheet():
         )
     except gspread.SpreadsheetNotFound:
         print(
-            f"[{datetime.now().strftime('%H:%M:%S')}] ❌ Error: 'wells spreadsheet' not found"
+            f"[{datetime.now().strftime('%H:%M:%S')}] ❌ Error: spreadsheet not found"
         )
         print(
             "Please check the spreadsheet name and ensure it's shared with your service account"
