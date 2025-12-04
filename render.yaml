@@ -1,0 +1,6 @@
+services:
+  - type: worker
+    name: whatsapp-automation-worker
+    env: python
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "python main.py"

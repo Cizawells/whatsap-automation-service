@@ -196,7 +196,7 @@ def read_wells_spreadsheet():
 
 # Test mode: every 5 seconds
 # schedule.every(5).seconds.do(read_wells_spreadsheet)
-schedule.every(10).seconds.do(read_wells_spreadsheet)
+# schedule.every(10).seconds.do(read_wells_spreadsheet)
 
 # Read wells spreadsheet on startup
 print("📋 Reading wells spreadsheet...")
@@ -204,9 +204,9 @@ read_wells_spreadsheet()
 
 print("🚀 Scheduler started! Press Ctrl+C to stop\n")
 
-try:
-    while True:
-        schedule.run_pending()
-        time.sleep(1)
-except KeyboardInterrupt:
-    print("\n⛔ Scheduler stopped")
+# try:
+#     while True:
+#         schedule.run_pending()
+#         time.sleep(1)
+# except KeyboardInterrupt:
+#     print("\n⛔ Scheduler stopped")
